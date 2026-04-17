@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>블랙셀러 가이드 퀴즈</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green: #1d9e75;
+      --green-dark: #0f6e56;
+      --green-bg: #e1f5ee;
+      --green-border: #5dcaa5;
+      --green-text: #04342c;
+      --red: #e24b4a;
+      --red-bg: #fcebeb;
+      --red-border: #f09595;
+      --red-text: #501313;
+      --blue-bg: #b5d4f4;
+      --blue-text: #0c447c;
+      --lime-bg: #c0dd97;
+      --lime-text: #27500a;
+      --amber: #ef9f27;
+      --amber-bg: #faeeda;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD Gothic Neo', sans-serif;
+      background: #f5f5f3;
+      color: #1a1a1a;
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 20px 16px 40px;
+    }
+
+    .shell {
+      width: 100%;
+      max-width: 520px;
+      background: #fff;
+      border-radius: 16px;
+      border: 1px solid #e5e5e5;
+      overflow: hidden;
+    }
+
+    /* 헤더 */
+    .header {
+      padding: 14px 20px;
+      border-bottom: 1px solid #efefef;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .logo { display: flex; align-items: center; gap: 8px; }
+    .logo-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--green); }
+    .logo-text { font-size: 14px; font-weight: 600; color: #1a1a1a; }
+    .today { font-size: 11px; color: #888; }
+
+    /* 탭 */
+    .tabs { display: flex; border-bottom: 1px solid #efefef; }
+    .tab {
+      flex: 1; padding: 11px 8px; font-size: 12px; font-weight: 500;
+      color: #888; cursor: pointer; text-align: center;
+      border-bottom: 2px solid transparent; transition: all .15s;
+      display: flex; align-items: center; justify-content: center; gap: 4px;
+    }
+    .tab.active { color: var(--green); border-bottom-color: var(--green); }
+    .tab:hover:not(.active) { color: #333; }
+
+    /* 화면 */
+    .screen { display: none; padding: 20px; }
+    .screen.active { display: block; }
+
+    /* 공통 버튼 */
+    .btn {
+      padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 500;
+      cursor: pointer; border: 1px solid #ddd; background: #fff; color: #333;
+      transition: all .15s;
+    }
+    .btn:hover { background: #f5f5f3; }
+    .btn:active { transform: scale(.98); }
+    .btn:disabled { opacity: .45; cursor: default; transform: none; }
+    .btn-sm { padding: 5px 11px; font-size: 12px; }
+    .btn-green { background: var(--green); color: #fff; border-color: var(--green); }
+    .btn-green:hover { background: var(--green-dark); border-color: var(--green-dark); }
+    .btn-ghost { border-color: transparent; background: transparent; color: #888; }
+    .btn-ghost:hover { background: #f5f5f3; color: #333; }
+
+    /* ── 잠금 화면 ── */
+    .lock-wrap {
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; padding: 40px 20px; min-height: 320px;
+    }
+    .lock-icon-circle {
+      width: 52px; height: 52px; border-radius: 50%;
+      background: #f5f5f3; border: 1px solid #e5e5e5;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; margin-bottom: 14px;
+    }
+    .lock-title { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+    .lock-desc { font-size: 12px; color: #888; margin-bottom: 24px; }
+    .lock-form { width: 100%; max-width: 260px; display: flex; flex-direction: column; gap: 8px; }
+    .input-wrap { position: relative; }
+    .pw-input {
+      width: 100%; padding: 9px 38px 9px 12px;
+      border: 1px solid #ddd; border-radius: 8px;
+      font-size: 13px; outline: none; transition: border-color .15s;
+      background: #fff; color: #1a1a1a;
+    }
+    .pw-input:focus { border-color: var(--green); }
+    .pw-input.shake { animation: shake .35s; border-color: var(--red); }
+    @keyframes shake {
+      0%,100%{transform:translateX(0)} 20%{transform:translateX(-5px)} 60%{transform:translateX(5px)}
+    }
+    .eye-btn {
+      position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+      background: none; border: none; cursor: pointer; font-size: 14px; color: #aaa; padding: 0;
+    }
+    .err-msg { font-size: 11px; color: var(--red); display: none; }
+    .err-msg.show { display: block; }
+    .lock-hint { font-size: 11px; color: #bbb; text-align: center; margin-top: 4px; }
+
+    /* ── 관리자 내부 ── */
+    .admin-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #efefef; }
+    .admin-badge { display: flex; align-items: center; gap: 5px; font-size: 12px; color: #888; }
+    .admin-badge-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
+
+    /* API 키 박스 */
+    .api-box { background: #f9f9f8; border: 1px solid #ececec; border-radius: 10px; padding: 14px; margin-bottom: 16px; }
+    .api-box-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .api-label { font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+    .api-badge { font-size: 10px; padding: 2px 8px; border-radius: 99px; font-weight: 500; }
+    .api-badge.set { background: var(--green-bg); color: var(--green-text); }
+    .api-badge.unset { background: var(--red-bg); color: var(--red-text); }
+    .api-input-row { display: flex; gap: 6px; }
+    .api-input {
+      flex: 1; padding: 7px 10px; border: 1px solid #ddd; border-radius: 8px;
+      font-size: 12px; font-family: 'SF Mono', 'Fira Mono', monospace;
+      background: #fff; color: #1a1a1a; outline: none;
+    }
+    .api-input:focus { border-color: var(--green); }
+    .api-note { font-size: 11px; color: #aaa; margin-top: 6px; }
+    .api-saved { font-size: 12px; color: #888; font-family: monospace; }
+
+    /* 서브탭 */
+    .subtabs { display: flex; gap: 6px; margin-bottom: 16px; }
+    .subtab {
+      padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 500;
+      color: #888; cursor: pointer; border: 1px solid #e5e5e5; background: #fff; transition: all .15s;
+    }
+    .subtab.active { background: var(--green-bg); border-color: var(--green-border); color: var(--green-text); }
+
+    /* 퀴즈 설정 */
+    .config-card { background: #f9f9f8; border-radius: 10px; padding: 14px; margin-bottom: 14px; }
+    .config-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .config-row:last-child { margin-bottom: 0; }
+    .config-label { font-size: 13px; }
+    select {
+      font-size: 13px; padding: 5px 8px; border: 1px solid #ddd; border-radius: 8px;
+      background: #fff; color: #1a1a1a; cursor: pointer; outline: none;
+    }
+    .gen-row { text-align: center; margin-bottom: 16px; }
+    .gen-spinner { display: none; margin: 10px auto; }
+    .gen-spinner.show { display: block; }
+
+    /* 미리보기 */
+    .preview-label { font-size: 11px; font-weight: 600; color: #aaa; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 10px; }
+    .pcard { border: 1px solid #efefef; border-radius: 10px; overflow: hidden; margin-bottom: 10px; }
+    .pcard-head { padding: 8px 12px; background: #f9f9f8; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #efefef; }
+    .type-tag { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 99px; }
+    .tag-ox { background: var(--blue-bg); color: var(--blue-text); }
+    .tag-mc { background: var(--lime-bg); color: var(--lime-text); }
+    .topic-tag { font-size: 11px; color: #aaa; }
+    .pcard-body { padding: 12px; }
+    .pq { font-size: 13px; color: #1a1a1a; line-height: 1.65; margin-bottom: 10px; font-weight: 500; }
+    .poc-row { display: flex; gap: 8px; }
+    .poc { flex: 1; padding: 8px; border: 1px solid #e5e5e5; border-radius: 8px; text-align: center; font-size: 16px; font-weight: 600; }
+    .poc.correct { border-color: var(--green); background: var(--green-bg); color: var(--green-text); }
+    .opts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+    .opt { padding: 5px 8px; border: 1px solid #e5e5e5; border-radius: 6px; font-size: 11px; color: #333; }
+    .opt.correct { border-color: var(--green); background: var(--green-bg); color: var(--green-text); }
+    .expl { margin-top: 8px; padding: 7px 9px; background: #f9f9f8; border-radius: 7px; font-size: 11px; color: #666; line-height: 1.55; }
+
+    /* 통계 */
+    .stats-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-bottom: 14px; }
+    .stat-c { background: #f9f9f8; border-radius: 8px; padding: 12px; text-align: center; }
+    .stat-n { font-size: 22px; font-weight: 600; }
+    .stat-l { font-size: 11px; color: #888; margin-top: 2px; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th { padding: 7px 10px; text-align: left; color: #aaa; font-weight: 500; border-bottom: 1px solid #efefef; }
+    td { padding: 7px 10px; border-bottom: 1px solid #f5f5f3; color: #1a1a1a; }
+    tr:last-child td { border-bottom: none; }
+    .rbar { height: 5px; background: #f0f0f0; border-radius: 99px; overflow: hidden; display: inline-block; width: 48px; vertical-align: middle; margin-right: 5px; }
+    .rfill { height: 100%; border-radius: 99px; }
+
+    /* ── 작업자 퀴즈 ── */
+    .qcard { border: 1px solid #e5e5e5; border-radius: 12px; overflow: hidden; }
+    .qcard-head { padding: 10px 16px; background: #f9f9f8; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #efefef; }
+    .qcard-topic { font-size: 11px; color: #aaa; }
+    .qcard-prog { font-size: 11px; color: #888; font-weight: 500; }
+    .qcard-body { padding: 18px; }
+    .q-text { font-size: 14px; line-height: 1.7; margin-bottom: 16px; font-weight: 500; }
+    .mc-opts { display: flex; flex-direction: column; gap: 7px; margin-bottom: 14px; }
+    .abtn {
+      padding: 10px 14px; border: 1px solid #e5e5e5; border-radius: 8px;
+      text-align: left; font-size: 13px; cursor: pointer; color: #1a1a1a;
+      background: #fff; transition: all .12s;
+    }
+    .abtn:hover:not(:disabled) { background: #f9f9f8; }
+    .abtn:disabled { cursor: default; opacity: .8; }
+    .abtn.ok { border-color: var(--green); background: var(--green-bg); color: var(--green-text); }
+    .abtn.ng { border-color: var(--red); background: var(--red-bg); color: var(--red-text); }
+    .abtn.reveal { border-color: var(--green); background: var(--green-bg); color: var(--green-text); }
+    .ox-row { display: flex; gap: 10px; margin-bottom: 14px; }
+    .obtn {
+      flex: 1; padding: 14px; border: 1px solid #e5e5e5; border-radius: 8px;
+      font-size: 20px; font-weight: 600; cursor: pointer; background: #fff;
+      text-align: center; transition: all .12s; color: #1a1a1a;
+    }
+    .obtn:hover:not(:disabled) { background: #f9f9f8; }
+    .obtn:disabled { cursor: default; opacity: .8; }
+    .obtn.ok { border-color: var(--green); background: var(--green-bg); color: var(--green-text); }
+    .obtn.ng { border-color: var(--red); background: var(--red-bg); color: var(--red-text); }
+    .obtn.reveal { border-color: var(--green); background: var(--green-bg); color: var(--green-text); }
+    .feedback {
+      padding: 10px 12px; border-radius: 8px; font-size: 12px; line-height: 1.65; margin-bottom: 14px;
+    }
+    .feedback.ok { background: var(--green-bg); border: 1px solid var(--green-border); color: var(--green-text); }
+    .feedback.ng { background: var(--red-bg); border: 1px solid var(--red-border); color: var(--red-text); }
+    .nav-row { display: flex; align-items: center; justify-content: space-between; }
+    .dot-row { display: flex; gap: 5px; }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: #e5e5e5; transition: all .2s; }
+    .dot.ok { background: var(--green); }
+    .dot.ng { background: var(--red); }
+    .dot.cur { background: #bbb; }
+    .result-body { text-align: center; padding: 30px 20px; }
+    .rscore { font-size: 42px; font-weight: 700; }
+    .rsub { font-size: 13px; color: #888; margin-top: 4px; }
+    .rmsg { font-size: 13px; color: #333; margin: 14px 0 20px; line-height: 1.6; }
+    .review-list { text-align: left; margin-top: 4px; }
+    .ritem { padding: 9px 12px; margin-bottom: 7px; border-radius: 8px; font-size: 12px; }
+    .ritem.ok { background: var(--green-bg); border-left: 3px solid var(--green); }
+    .ritem.ng { background: var(--red-bg); border-left: 3px solid var(--red); }
+    .ritem-q { font-weight: 500; margin-bottom: 3px; color: #1a1a1a; }
+    .ritem-a { color: #666; }
+    .empty { text-align: center; padding: 40px 20px; color: #aaa; font-size: 13px; line-height: 1.8; }
+    .empty a { color: var(--green); text-decoration: underline; cursor: pointer; }
+    .notice { font-size: 11px; color: #aaa; padding: 7px 10px; background: #f9f9f8; border-radius: 7px; margin-bottom: 14px; }
+    .start-center { text-align: center; padding: 28px 20px; }
+    .loading-box { text-align: center; padding: 40px 20px; color: #aaa; font-size: 13px; }
+    .spinner {
+      width: 22px; height: 22px; border: 2px solid #e5e5e5; border-top-color: var(--green);
+      border-radius: 50%; animation: spin .7s linear infinite;
+      display: inline-block; margin-bottom: 10px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .err-box { background: var(--red-bg); border: 1px solid var(--red-border); border-radius: 8px; padding: 10px 12px; font-size: 12px; color: var(--red-text); margin-top: 10px; }
+  </style>
+</head>
+<body>
+<div class="shell">
+  <!-- 헤더 -->
+  <div class="header">
+    <div class="logo"><div class="logo-dot"></div><span class="logo-text">블랙셀러 가이드 퀴즈</span></div>
+    <span class="today" id="todayEl"></span>
+  </div>
+
+  <!-- 탭 -->
+  <div class="tabs">
+    <div class="tab active" id="tab-violation" onclick="switchTab('violation')">위반사유 작업자</div>
+    <div class="tab" id="tab-platform" onclick="switchTab('platform')">플랫폼 신고 작업자</div>
+    <div class="tab" id="tab-admin" onclick="switchTab('admin')">🔒 관리자</div>
+  </div>
+
+  <!-- 위반사유 작업자 -->
+  <div class="screen active" id="screen-violation">
+    <div id="area-violation">
+      <div class="empty">
+        <div style="font-size:26px;margin-bottom:8px">📋</div>
+        오늘의 퀴즈가 아직 없습니다.<br>
+        <a onclick="switchTab('admin')">관리자 탭</a>에서 먼저 생성해 주세요.
+      </div>
+    </div>
+  </div>
+
+  <!-- 플랫폼 신고 작업자 -->
+  <div class="screen" id="screen-platform">
+    <div id="area-platform">
+      <div class="empty">
+        <div style="font-size:26px;margin-bottom:8px">📢</div>
+        오늘의 퀴즈가 아직 없습니다.<br>
+        <a onclick="switchTab('admin')">관리자 탭</a>에서 먼저 생성해 주세요.
+      </div>
+    </div>
+  </div>
+
+  <!-- 관리자 -->
+  <div class="screen" id="screen-admin">
+    <!-- 잠금 화면 -->
+    <div id="lock-screen" class="lock-wrap">
+      <div class="lock-icon-circle">🔐</div>
+      <div class="lock-title">관리자 전용 공간</div>
+      <div class="lock-desc">관리자 비밀번호를 입력하세요</div>
+      <div class="lock-form">
+        <div class="input-wrap">
+          <input class="pw-input" type="password" id="pw-input" placeholder="비밀번호 입력"
+            onkeydown="if(event.key==='Enter')checkPw()" oninput="clearPwErr()">
+          <button class="eye-btn" onclick="toggleEye()">👁</button>
+        </div>
+        <div class="err-msg" id="pw-err">비밀번호가 올바르지 않습니다.</div>
+        <button class="btn btn-green" style="width:100%" onclick="checkPw()">입장하기</button>
+        <div class="lock-hint">힌트: admin1234</div>
+      </div>
+    </div>
+
+    <!-- 관리자 내부 -->
+    <div id="admin-inner" style="display:none">
+      <div class="admin-top">
+        <div class="admin-badge"><div class="admin-badge-dot"></div>관리자 모드</div>
+        <button class="btn btn-ghost btn-sm" onclick="lockAdmin()">🔒 잠금</button>
+      </div>
+
+      <!-- API 키 -->
+      <div class="api-box">
+        <div class="api-box-head">
+          <span class="api-label">🔑 API 키 <span class="api-badge unset" id="api-badge">미설정</span></span>
+          <button class="btn btn-ghost btn-sm" id="api-change-btn" onclick="showApiInput()" style="display:none">변경</button>
+        </div>
+        <div id="api-input-area">
+          <div class="api-input-row">
+            <input class="api-input" type="password" id="api-key-input" placeholder="sk-ant-api03-...">
+            <button class="btn btn-green btn-sm" onclick="saveApiKey()">저장</button>
+          </div>
+          <div class="api-note">키는 이 세션에만 저장되며 외부로 전송되지 않습니다.</div>
+        </div>
+        <div id="api-saved-area" style="display:none">
+          <span class="api-saved" id="api-masked"></span>
+        </div>
+      </div>
+
+      <!-- 서브탭 -->
+      <div class="subtabs">
+        <div class="subtab active" onclick="switchSub('generate',this)">퀴즈 생성</div>
+        <div class="subtab" onclick="switchSub('stats',this)">정답률 확인</div>
+      </div>
+
+      <!-- 생성 패널 -->
+      <div id="panel-generate">
+        <div class="config-card">
+          <div class="config-row">
+            <span class="config-label">문항 수</span>
+            <select id="cfg-count"><option value="3">3문제</option><option value="5" selected>5문제</option><option value="10">10문제</option></select>
+          </div>
+          <div class="config-row">
+            <span class="config-label">유형</span>
+            <select id="cfg-type"><option value="mix" selected>혼합 (O/X + 4지선다)</option><option value="ox">O/X만</option><option value="mc">4지선다만</option></select>
+          </div>
+          <div class="config-row">
+            <span class="config-label">주제 범위</span>
+            <select id="cfg-topic"><option value="all" selected>전체</option><option value="violation">위반사항 확인</option><option value="reseller">리셀러 판정</option><option value="platform">플랫폼 신고</option><option value="seller">셀러 정보 수집</option></select>
+          </div>
+        </div>
+        <div class="gen-row">
+          <button class="btn btn-green" id="gen-btn" onclick="generateQuiz()">✨ 랜덤 퀴즈 생성</button>
+        </div>
+        <div id="preview-area"></div>
+      </div>
+
+      <!-- 통계 패널 -->
+      <div id="panel-stats" style="display:none">
+        <div class="stats-grid">
+          <div class="stat-c"><div class="stat-n" id="st-total">0</div><div class="stat-l">총 풀이</div></div>
+          <div class="stat-c"><div class="stat-n" id="st-avg" style="color:var(--green)">0%</div><div class="stat-l">평균 정답률</div></div>
+          <div class="stat-c"><div class="stat-n" id="st-types">0</div><div class="stat-l">참여 유형</div></div>
+        </div>
+        <div id="stats-body"><div class="empty">아직 풀이 데이터가 없습니다.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ── 상수 ── */
+const ADMIN_PW = 'admin1234';
+
+/* ── 상태 ── */
+let apiKey = '';
+let todayQuizzes = [];
+let log = [];
+try { log = JSON.parse(localStorage.getItem('bs_log') || '[]'); } catch(e) {}
+
+const wState = {};
+
+/* ── 초기화 ── */
+document.getElementById('todayEl').textContent =
+  new Date().toLocaleDateString('ko-KR', { month:'long', day:'numeric', weekday:'short' });
+
+/* ── 탭 전환 ── */
+function switchTab(t) {
+  ['violation','platform','admin'].forEach(n => {
+    document.getElementById('tab-'+n).classList.toggle('active', n===t);
+    document.getElementById('screen-'+n).classList.toggle('active', n===t);
+  });
+  if (t === 'admin' && document.getElementById('admin-inner').style.display !== 'none') updateStats();
+}
+
+/* ── 관리자 잠금 ── */
+function checkPw() {
+  const v = document.getElementById('pw-input').value;
+  if (v === ADMIN_PW) {
+    document.getElementById('lock-screen').style.display = 'none';
+    document.getElementById('admin-inner').style.display = 'block';
+    document.getElementById('tab-admin').textContent = '🛠 관리자';
+    document.getElementById('pw-input').value = '';
+    updateStats();
+  } else {
+    const inp = document.getElementById('pw-input');
+    inp.classList.add('shake');
+    document.getElementById('pw-err').classList.add('show');
+    setTimeout(() => inp.classList.remove('shake'), 400);
+  }
+}
+function clearPwErr() {
+  document.getElementById('pw-input').classList.remove('shake');
+  document.getElementById('pw-err').classList.remove('show');
+}
+function toggleEye() {
+  const inp = document.getElementById('pw-input');
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+}
+function lockAdmin() {
+  document.getElementById('admin-inner').style.display = 'none';
+  document.getElementById('lock-screen').style.display = 'flex';
+  document.getElementById('tab-admin').textContent = '🔒 관리자';
+}
+
+/* ── API 키 ── */
+function saveApiKey() {
+  const v = document.getElementById('api-key-input').value.trim();
+  if (!v.startsWith('sk-')) { alert('올바른 API 키를 입력해 주세요 (sk- 로 시작)'); return; }
+  apiKey = v;
+  document.getElementById('api-input-area').style.display = 'none';
+  document.getElementById('api-saved-area').style.display = 'block';
+  document.getElementById('api-badge').className = 'api-badge set';
+  document.getElementById('api-badge').textContent = '설정됨';
+  document.getElementById('api-change-btn').style.display = '';
+  document.getElementById('api-masked').textContent = apiKey.slice(0,12) + '••••••••' + apiKey.slice(-4);
+}
+function showApiInput() {
+  document.getElementById('api-input-area').style.display = 'block';
+  document.getElementById('api-saved-area').style.display = 'none';
+  document.getElementById('api-key-input').value = apiKey;
+}
+
+/* ── 서브탭 ── */
+function switchSub(t, el) {
+  document.querySelectorAll('.subtab').forEach(s => s.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('panel-generate').style.display = t === 'generate' ? 'block' : 'none';
+  document.getElementById('panel-stats').style.display = t === 'stats' ? 'block' : 'none';
+  if (t === 'stats') updateStats();
+}
+
+/* ── 퀴즈 생성 ── */
+async function generateQuiz() {
+  if (!apiKey) { alert('API 키를 먼저 저장해 주세요.'); return; }
+  const count = parseInt(document.getElementById('cfg-count').value);
+  const type = document.getElementById('cfg-type').value;
+  const topic = document.getElementById('cfg-topic').value;
+
+  document.getElementById('preview-area').innerHTML = '<div class="loading-box"><div class="spinner"></div><br>퀴즈 생성 중...</div>';
+  document.getElementById('gen-btn').disabled = true;
+
+  try {
+    const res = await fetch('/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-key': apiKey },
+      body: JSON.stringify({ count, type, topic })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    todayQuizzes = data.quizzes;
+    renderPreview(todayQuizzes);
+    setupWorker('violation');
+    setupWorker('platform');
+  } catch(e) {
+    document.getElementById('preview-area').innerHTML = `<div class="err-box">오류: ${e.message}</div>`;
+  }
+  document.getElementById('gen-btn').disabled = false;
+}
+
+function renderPreview(qs) {
+  let h = '<div class="preview-label">미리보기 · 정답 표시됨</div>';
+  qs.forEach((q,i) => {
+    h += `<div class="pcard">
+      <div class="pcard-head">
+        <span class="type-tag ${q.type==='ox'?'tag-ox':'tag-mc'}">${q.type==='ox'?'O/X':'4지선다'}</span>
+        <span class="topic-tag">${q.topic}</span>
+      </div>
+      <div class="pcard-body">
+        <div class="pq">Q${i+1}. ${q.question}</div>`;
+    if (q.type==='ox') {
+      h += `<div class="poc-row">
+        <div class="poc ${q.answer==='O'?'correct':''}">O</div>
+        <div class="poc ${q.answer==='X'?'correct':''}">X</div>
+      </div>`;
+    } else {
+      h += '<div class="opts-grid">' + q.options.map(o=>`<div class="opt ${o===q.answer?'correct':''}">${o}</div>`).join('') + '</div>';
+    }
+    h += `<div class="expl">💡 ${q.explanation}</div></div></div>`;
+  });
+  document.getElementById('preview-area').innerHTML = h;
+}
+
+/* ── 작업자 퀴즈 ── */
+function setupWorker(mode) {
+  if (!todayQuizzes.length) return;
+  const el = document.getElementById('area-'+mode);
+  el.innerHTML = `<div class="qcard">
+    <div class="qcard-body start-center">
+      <div style="font-size:24px;margin-bottom:10px">✏️</div>
+      <div style="font-size:14px;font-weight:600;margin-bottom:5px">오늘의 퀴즈</div>
+      <div style="font-size:12px;color:#aaa;margin-bottom:18px">총 ${todayQuizzes.length}문제</div>
+      <button class="btn btn-green" onclick="startWorker('${mode}')">퀴즈 시작하기</button>
+    </div>
+  </div>`;
+}
+
+function startWorker(mode) {
+  wState[mode] = { idx: 0, answers: new Array(todayQuizzes.length).fill(null) };
+  renderQ(mode);
+}
+
+function renderQ(mode) {
+  const s = wState[mode];
+  const q = todayQuizzes[s.idx];
+  const ans = s.answers[s.idx];
+  const isLast = s.idx === todayQuizzes.length - 1;
+
+  let optsHtml = '';
+  if (q.type === 'ox') {
+    optsHtml = '<div class="ox-row">' + ['O','X'].map(v => {
+      let c = '';
+      if (ans !== null) {
+        if (v === q.answer) c = 'reveal';
+        if (v === ans && ans !== q.answer) c = 'ng';
+        if (v === ans && ans === q.answer) c = 'ok';
+      }
+      return `<button class="obtn ${c}" ${ans!==null?'disabled':''} onclick="pickAns('${mode}','${v}')">${v}</button>`;
+    }).join('') + '</div>';
+  } else {
+    optsHtml = '<div class="mc-opts">' + q.options.map(o => {
+      let c = '';
+      if (ans !== null) {
+        if (o === q.answer) c = 'reveal';
+        if (o === ans && ans !== q.answer) c = 'ng';
+        if (o === ans && ans === q.answer) c = 'ok';
+      }
+      const safe = o.replace(/'/g,"\\'");
+      return `<button class="abtn ${c}" ${ans!==null?'disabled':''} onclick="pickAns('${mode}','${safe}')">${o}</button>`;
+    }).join('') + '</div>';
+  }
+
+  let fbHtml = '';
+  if (ans !== null) {
+    const ok = ans === q.answer;
+    fbHtml = `<div class="feedback ${ok?'ok':'ng'}">${ok?'✓ 정답입니다!':'✗ 틀렸습니다. 정답: <strong>'+q.answer+'</strong>'}<br>${q.explanation}</div>`;
+  }
+
+  const dots = todayQuizzes.map((_,i) => {
+    let c = '';
+    if (i === s.idx) c = 'cur';
+    else if (s.answers[i] !== null) c = s.answers[i] === todayQuizzes[i].answer ? 'ok' : 'ng';
+    return `<div class="dot ${c}"></div>`;
+  }).join('');
+
+  const navRight = ans !== null
+    ? (isLast
+        ? `<button class="btn btn-green btn-sm" onclick="finishWorker('${mode}')">결과 보기</button>`
+        : `<button class="btn btn-green btn-sm" onclick="nextQ('${mode}')">다음</button>`)
+    : '';
+
+  document.getElementById('area-'+mode).innerHTML = `<div class="qcard">
+    <div class="qcard-head">
+      <span class="qcard-topic">${q.topic}</span>
+      <span class="qcard-prog">${s.idx+1} / ${todayQuizzes.length}</span>
+    </div>
+    <div class="qcard-body">
+      <div class="q-text">Q${s.idx+1}. ${q.question}</div>
+      ${optsHtml}
+      ${fbHtml}
+      <div class="nav-row">
+        <div class="dot-row">${dots}</div>
+        <div style="display:flex;gap:6px">
+          ${s.idx > 0 ? `<button class="btn btn-sm" onclick="prevQ('${mode}')">이전</button>` : ''}
+          ${navRight}
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function pickAns(mode, ans) { wState[mode].answers[wState[mode].idx] = ans; renderQ(mode); }
+function nextQ(mode) { wState[mode].idx++; renderQ(mode); }
+function prevQ(mode) { wState[mode].idx--; renderQ(mode); }
+
+function finishWorker(mode) {
+  const s = wState[mode];
+  const correct = s.answers.filter((a,i) => a === todayQuizzes[i].answer).length;
+  const total = todayQuizzes.length;
+  const pct = Math.round(correct / total * 100);
+  log.push({ date: new Date().toLocaleDateString('ko-KR'), mode: mode==='violation'?'위반사유':'플랫폼 신고', correct, total, pct });
+  try { localStorage.setItem('bs_log', JSON.stringify(log)); } catch(e) {}
+
+  const em = pct>=80?'🎉':pct>=60?'👍':'📚';
+  const msg = pct>=80?'훌륭합니다! 가이드를 잘 숙지하고 있어요.':pct>=60?'조금 더 복습하면 완벽해질 거예요.':'가이드를 다시 한 번 읽어보세요.';
+  const color = pct>=80?'var(--green)':pct>=60?'var(--amber)':'var(--red)';
+
+  let review = todayQuizzes.map((q,i) => {
+    const ok = s.answers[i] === q.answer;
+    const qShort = q.question.length > 52 ? q.question.slice(0,52)+'…' : q.question;
+    return `<div class="ritem ${ok?'ok':'ng'}"><div class="ritem-q">Q${i+1}. ${qShort}</div><div class="ritem-a">${ok?'✓ 정답':'✗ 오답 → 정답: '+q.answer}</div></div>`;
+  }).join('');
+
+  document.getElementById('area-'+mode).innerHTML = `<div class="qcard"><div class="qcard-body result-body">
+    <div style="font-size:28px;margin-bottom:8px">${em}</div>
+    <div class="rscore" style="color:${color}">${pct}점</div>
+    <div class="rsub">${correct} / ${total}문제 정답</div>
+    <div class="rmsg">${msg}</div>
+    <button class="btn btn-green" style="margin-bottom:18px" onclick="setupWorker('${mode}')">다시 풀기</button>
+    <div class="review-list">${review}</div>
+  </div></div>`;
+}
+
+/* ── 통계 ── */
+function updateStats() {
+  document.getElementById('st-total').textContent = log.length;
+  if (!log.length) { document.getElementById('stats-body').innerHTML = '<div class="empty">아직 풀이 데이터가 없습니다.</div>'; return; }
+  const avg = Math.round(log.reduce((s,l) => s+l.pct, 0) / log.length);
+  document.getElementById('st-avg').textContent = avg + '%';
+  document.getElementById('st-types').textContent = new Set(log.map(l=>l.mode)).size;
+  const rows = log.slice().reverse().map(l => {
+    const fc = l.pct>=80?'var(--green)':l.pct>=60?'var(--amber)':'var(--red)';
+    return `<tr><td>${l.date}</td><td>${l.mode}</td><td>${l.correct}/${l.total}</td><td><div class="rbar"><div class="rfill" style="width:${l.pct}%;background:${fc}"></div></div>${l.pct}%</td></tr>`;
+  }).join('');
+  document.getElementById('stats-body').innerHTML = `<table><thead><tr><th>날짜</th><th>유형</th><th>정답</th><th>정답률</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+updateStats();
+</script>
+</body>
+</html>
