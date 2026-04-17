@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>블랙셀러 가이드 퀴즈</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD Gothic Neo', sans-serif;
+      background: #f5f5f3;
+      color: #1a1a1a;
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 20px 16px 48px;
+    }
+
+    .shell {
+      width: 100%;
+      max-width: 520px;
+      background: #fff;
+      border-radius: 16px;
+      border: 1px solid #e5e5e5;
+      overflow: hidden;
+    }
+
+    /* 헤더 */
+    .header {
+      padding: 14px 20px;
+      border-bottom: 1px solid #efefef;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .logo { display: flex; align-items: center; gap: 8px; }
+    .logo-dot { width: 9px; height: 9px; border-radius: 50%; background: #1d9e75; }
+    .logo-text { font-size: 14px; font-weight: 600; }
+    .today-lbl { font-size: 11px; color: #aaa; }
+
+    /* 탭 */
+    .tabs { display: flex; border-bottom: 1px solid #efefef; }
+    .tab {
+      flex: 1; padding: 11px 6px; font-size: 12px; font-weight: 500;
+      color: #999; cursor: pointer; text-align: center;
+      border-bottom: 2px solid transparent; transition: all .15s;
+    }
+    .tab.active { color: #1d9e75; border-bottom-color: #1d9e75; }
+    .tab:hover:not(.active) { color: #333; }
+
+    /* 화면 */
+    .screen { display: none; padding: 20px; }
+    .screen.active { display: block; }
+
+    /* 버튼 */
+    .btn {
+      padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 500;
+      cursor: pointer; border: 1px solid #ddd; background: #fff; color: #333;
+      transition: all .15s;
+    }
+    .btn:hover { background: #f5f5f3; }
+    .btn:active { transform: scale(.98); }
+    .btn:disabled { opacity: .4; cursor: default; transform: none; }
+    .btn-sm { padding: 5px 11px; font-size: 12px; }
+    .btn-green { background: #1d9e75; color: #fff; border-color: #1d9e75; }
+    .btn-green:hover { background: #0f6e56; }
+    .btn-ghost { border-color: transparent; background: transparent; color: #999; }
+    .btn-ghost:hover { background: #f5f5f3; color: #333; }
+
+    /* 잠금 화면 */
+    .lock-wrap {
+      display: flex; flex-direction: column; align-items: center;
+      padding: 44px 20px; min-height: 320px;
+    }
+    .lock-circle {
+      width: 52px; height: 52px; border-radius: 50%;
+      background: #f5f5f3; border: 1px solid #e5e5e5;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; margin-bottom: 14px;
+    }
+    .lock-title { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+    .lock-desc { font-size: 12px; color: #aaa; margin-bottom: 24px; }
+    .lock-form { width: 100%; max-width: 260px; display: flex; flex-direction: column; gap: 8px; }
+    .input-wrap { position: relative; }
+    .text-input {
+      width: 100%; padding: 9px 36px 9px 12px;
+      border: 1px solid #ddd; border-radius: 8px;
+      font-size: 13px; outline: none; transition: border-color .15s;
+      background: #fff; color: #1a1a1a;
+    }
+    .text-input:focus { border-color: #1d9e75; }
+    .text-input.shake { animation: shake .35s; border-color: #e24b4a; }
+    @keyframes shake {
+      0%,100%{transform:translateX(0)} 25%{transform:translateX(-4px)} 75%{transform:translateX(4px)}
+    }
+    .eye-btn {
+      position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+      background: none; border: none; cursor: pointer; font-size: 13px; color: #bbb; padding: 0;
+    }
+    .err-text { font-size: 11px; color: #e24b4a; display: none; }
+    .err-text.show { display: block; }
+    .hint-text { font-size: 11px; color: #ccc; text-align: center; }
+
+    /* 관리자 내부 */
+    .admin-topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #efefef;
+    }
+    .admin-badge { display: flex; align-items: center; gap: 5px; font-size: 12px; color: #aaa; }
+    .admin-dot { width: 6px; height: 6px; border-radius: 50%; background: #1d9e75; }
+
+    /* API 키 박스 */
+    .api-box {
+      background: #f9f9f8; border: 1px solid #ececec;
+      border-radius: 10px; padding: 14px; margin-bottom: 16px;
+    }
+    .api-box-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .api-box-label { font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+    .pill {
+      font-size: 10px; padding: 2px 8px; border-radius: 99px; font-weight: 500;
+    }
+    .pill-set { background: #e1f5ee; color: #04342c; }
+    .pill-unset { background: #fcebeb; color: #501313; }
+    .api-row { display: flex; gap: 6px; }
+    .api-field {
+      flex: 1; padding: 7px 10px; border: 1px solid #ddd; border-radius: 8px;
+      font-size: 12px; font-family: 'SF Mono', 'Fira Mono', monospace;
+      background: #fff; color: #1a1a1a; outline: none;
+    }
+    .api-field:focus { border-color: #1d9e75; }
+    .api-note { font-size: 11px; color: #bbb; margin-top: 6px; }
+    .api-masked { font-size: 12px; color: #aaa; font-family: monospace; }
+
+    /* 서브탭 */
+    .subtabs { display: flex; gap: 6px; margin-bottom: 16px; }
+    .subtab {
+      padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 500;
+      color: #999; cursor: pointer; border: 1px solid #e5e5e5; background: #fff; transition: all .15s;
+    }
+    .subtab.active { background: #e1f5ee; border-color: #5dcaa5; color: #04342c; }
+
+    /* 퀴즈 설정 */
+    .config-box { background: #f9f9f8; border-radius: 10px; padding: 14px; margin-bottom: 14px; }
+    .cfg-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .cfg-row:last-child { margin-bottom: 0; }
+    .cfg-label { font-size: 13px; }
+    select {
+      font-size: 13px; padding: 5px 8px; border: 1px solid #ddd; border-radius: 8px;
+      background: #fff; color: #1a1a1a; cursor: pointer; outline: none;
+    }
+    .gen-row { text-align: center; margin-bottom: 16px; }
+
+    /* 미리보기 */
+    .preview-lbl { font-size: 11px; font-weight: 600; color: #bbb; letter-spacing: .5px; text-transform: uppercase; margin-bottom: 10px; }
+    .pcard { border: 1px solid #efefef; border-radius: 10px; overflow: hidden; margin-bottom: 10px; }
+    .pcard-head { padding: 8px 12px; background: #f9f9f8; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #efefef; }
+    .type-pill { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 99px; }
+    .pill-ox { background: #b5d4f4; color: #0c447c; }
+    .pill-mc { background: #c0dd97; color: #27500a; }
+    .topic-lbl { font-size: 11px; color: #bbb; }
+    .pcard-body { padding: 12px; }
+    .pq-text { font-size: 13px; line-height: 1.65; margin-bottom: 10px; font-weight: 500; }
+    .poc-row { display: flex; gap: 8px; }
+    .poc { flex: 1; padding: 8px; border: 1px solid #e5e5e5; border-radius: 8px; text-align: center; font-size: 16px; font-weight: 600; }
+    .poc.hit { border-color: #1d9e75; background: #e1f5ee; color: #04342c; }
+    .opts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+    .opt-item { padding: 5px 8px; border: 1px solid #e5e5e5; border-radius: 6px; font-size: 11px; color: #333; }
+    .opt-item.hit { border-color: #1d9e75; background: #e1f5ee; color: #04342c; }
+    .expl-text { margin-top: 8px; padding: 7px 9px; background: #f9f9f8; border-radius: 7px; font-size: 11px; color: #777; line-height: 1.55; }
+
+    /* 통계 */
+    .stats-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-bottom: 14px; }
+    .stat-box { background: #f9f9f8; border-radius: 8px; padding: 12px; text-align: center; }
+    .stat-num { font-size: 22px; font-weight: 600; }
+    .stat-lbl { font-size: 11px; color: #aaa; margin-top: 2px; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th { padding: 7px 10px; text-align: left; color: #bbb; font-weight: 500; border-bottom: 1px solid #efefef; }
+    td { padding: 7px 10px; border-bottom: 1px solid #f5f5f3; }
+    tr:last-child td { border-bottom: none; }
+    .rbar { height: 5px; background: #f0f0f0; border-radius: 99px; overflow: hidden; display: inline-block; width: 48px; vertical-align: middle; margin-right: 5px; }
+    .rfill { height: 100%; border-radius: 99px; }
+
+    /* 작업자 퀴즈 카드 */
+    .qcard { border: 1px solid #e5e5e5; border-radius: 12px; overflow: hidden; }
+    .qcard-head {
+      padding: 10px 16px; background: #f9f9f8;
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid #efefef;
+    }
+    .qcard-topic { font-size: 11px; color: #bbb; }
+    .qcard-prog { font-size: 11px; color: #999; font-weight: 500; }
+    .qcard-body { padding: 18px; }
+    .q-text { font-size: 14px; line-height: 1.7; margin-bottom: 16px; font-weight: 500; }
+    .mc-list { display: flex; flex-direction: column; gap: 7px; margin-bottom: 14px; }
+    .abtn {
+      padding: 10px 14px; border: 1px solid #e5e5e5; border-radius: 8px;
+      text-align: left; font-size: 13px; cursor: pointer; color: #1a1a1a;
+      background: #fff; transition: all .12s;
+    }
+    .abtn:hover:not(:disabled) { background: #f9f9f8; }
+    .abtn:disabled { cursor: default; }
+    .abtn.ok  { border-color: #1d9e75; background: #e1f5ee; color: #04342c; }
+    .abtn.ng  { border-color: #e24b4a; background: #fcebeb; color: #501313; }
+    .abtn.rev { border-color: #1d9e75; background: #e1f5ee; color: #04342c; opacity: .8; }
+    .ox-row { display: flex; gap: 10px; margin-bottom: 14px; }
+    .obtn {
+      flex: 1; padding: 14px; border: 1px solid #e5e5e5; border-radius: 8px;
+      font-size: 20px; font-weight: 600; cursor: pointer; background: #fff;
+      text-align: center; transition: all .12s; color: #1a1a1a;
+    }
+    .obtn:hover:not(:disabled) { background: #f9f9f8; }
+    .obtn:disabled { cursor: default; }
+    .obtn.ok  { border-color: #1d9e75; background: #e1f5ee; color: #04342c; }
+    .obtn.ng  { border-color: #e24b4a; background: #fcebeb; color: #501313; }
+    .obtn.rev { border-color: #1d9e75; background: #e1f5ee; color: #04342c; opacity: .8; }
+    .feedback { padding: 10px 12px; border-radius: 8px; font-size: 12px; line-height: 1.65; margin-bottom: 14px; }
+    .feedback.ok { background: #e1f5ee; border: 1px solid #5dcaa5; color: #04342c; }
+    .feedback.ng { background: #fcebeb; border: 1px solid #f09595; color: #501313; }
+    .nav-row { display: flex; align-items: center; justify-content: space-between; }
+    .dots { display: flex; gap: 5px; }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: #e5e5e5; transition: all .2s; }
+    .dot.ok  { background: #1d9e75; }
+    .dot.ng  { background: #e24b4a; }
+    .dot.cur { background: #bbb; }
+
+    /* 결과 */
+    .result-body { text-align: center; padding: 30px 20px; }
+    .result-score { font-size: 42px; font-weight: 700; }
+    .result-sub { font-size: 13px; color: #aaa; margin-top: 4px; }
+    .result-msg { font-size: 13px; color: #444; margin: 14px 0 20px; line-height: 1.6; }
+    .review { text-align: left; }
+    .ri { padding: 9px 12px; margin-bottom: 7px; font-size: 12px; }
+    .ri.ok { background: #e1f5ee; border-left: 3px solid #1d9e75; }
+    .ri.ng { background: #fcebeb; border-left: 3px solid #e24b4a; }
+    .ri-q { font-weight: 500; margin-bottom: 3px; }
+    .ri-a { color: #666; }
+
+    /* 기타 */
+    .empty { text-align: center; padding: 44px 20px; color: #bbb; font-size: 13px; line-height: 1.8; }
+    .empty a { color: #1d9e75; text-decoration: underline; cursor: pointer; }
+    .start-center { text-align: center; padding: 28px 20px; }
+    .loading-box { text-align: center; padding: 40px 20px; color: #bbb; font-size: 13px; }
+    .spinner {
+      width: 22px; height: 22px; border: 2px solid #eee; border-top-color: #1d9e75;
+      border-radius: 50%; animation: spin .7s linear infinite;
+      display: inline-block; margin-bottom: 10px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .err-box { background: #fcebeb; border: 1px solid #f09595; border-radius: 8px; padding: 10px 12px; font-size: 12px; color: #501313; margin-top: 10px; }
+  </style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- 헤더 -->
+  <div class="header">
+    <div class="logo"><div class="logo-dot"></div><span class="logo-text">블랙셀러 가이드 퀴즈</span></div>
+    <span class="today-lbl" id="todayEl"></span>
+  </div>
+
+  <!-- 탭 -->
+  <div class="tabs">
+    <div class="tab active" id="tab-violation" onclick="gotoTab('violation')">위반사유 작업자</div>
+    <div class="tab" id="tab-platform"  onclick="gotoTab('platform')">플랫폼 신고 작업자</div>
+    <div class="tab" id="tab-admin"     onclick="gotoTab('admin')">🔒 관리자</div>
+  </div>
+
+  <!-- 위반사유 작업자 -->
+  <div class="screen active" id="screen-violation">
+    <div id="area-violation">
+      <div class="empty">
+        <div style="font-size:26px;margin-bottom:8px">📋</div>
+        오늘의 퀴즈가 아직 없습니다.<br>
+        <a onclick="gotoTab('admin')">관리자 탭</a>에서 먼저 생성해 주세요.
+      </div>
+    </div>
+  </div>
+
+  <!-- 플랫폼 신고 작업자 -->
+  <div class="screen" id="screen-platform">
+    <div id="area-platform">
+      <div class="empty">
+        <div style="font-size:26px;margin-bottom:8px">📢</div>
+        오늘의 퀴즈가 아직 없습니다.<br>
+        <a onclick="gotoTab('admin')">관리자 탭</a>에서 먼저 생성해 주세요.
+      </div>
+    </div>
+  </div>
+
+  <!-- 관리자 -->
+  <div class="screen" id="screen-admin">
+
+    <!-- 잠금 화면 -->
+    <div id="lock-screen" class="lock-wrap">
+      <div class="lock-circle">🔐</div>
+      <div class="lock-title">관리자 전용 공간</div>
+      <div class="lock-desc">관리자 비밀번호를 입력하세요</div>
+      <div class="lock-form">
+        <div class="input-wrap">
+          <input class="text-input" type="password" id="pw-input"
+            placeholder="비밀번호 입력"
+            onkeydown="if(event.key==='Enter')checkPw()"
+            oninput="clearPwErr()">
+          <button class="eye-btn" onclick="toggleEye('pw-input')">👁</button>
+        </div>
+        <span class="err-text" id="pw-err">비밀번호가 올바르지 않습니다.</span>
+        <button class="btn btn-green" style="width:100%" onclick="checkPw()">입장하기</button>
+        <span class="hint-text">힌트: admin1234</span>
+      </div>
+    </div>
+
+    <!-- 관리자 내부 -->
+    <div id="admin-inner" style="display:none">
+      <div class="admin-topbar">
+        <div class="admin-badge"><div class="admin-dot"></div>관리자 모드</div>
+        <button class="btn btn-ghost btn-sm" onclick="lockAdmin()">🔒 잠금</button>
+      </div>
+
+      <!-- API 키 입력 -->
+      <div class="api-box">
+        <div class="api-box-head">
+          <span class="api-box-label">🔑 Anthropic API 키 <span class="pill pill-unset" id="api-pill">미설정</span></span>
+          <button class="btn btn-ghost btn-sm" id="api-change-btn" onclick="showApiInput()" style="display:none">변경</button>
+        </div>
+        <div id="api-input-wrap">
+          <div class="api-row">
+            <input class="api-field" type="password" id="api-field" placeholder="sk-ant-api03-...">
+            <button class="btn btn-green btn-sm" onclick="saveApiKey()">저장</button>
+          </div>
+          <div class="api-note">키는 이 탭이 열려있는 동안만 메모리에 저장됩니다.</div>
+        </div>
+        <div id="api-saved-wrap" style="display:none">
+          <span class="api-masked" id="api-masked-text"></span>
+        </div>
+      </div>
+
+      <!-- 서브탭 -->
+      <div class="subtabs">
+        <div class="subtab active" onclick="switchSub('generate', this)">퀴즈 생성</div>
+        <div class="subtab"       onclick="switchSub('stats',    this)">정답률 확인</div>
+      </div>
+
+      <!-- 퀴즈 생성 패널 -->
+      <div id="panel-generate">
+        <div class="config-box">
+          <div class="cfg-row">
+            <span class="cfg-label">문항 수</span>
+            <select id="cfg-count">
+              <option value="3">3문제</option>
+              <option value="5" selected>5문제</option>
+              <option value="10">10문제</option>
+            </select>
+          </div>
+          <div class="cfg-row">
+            <span class="cfg-label">유형</span>
+            <select id="cfg-type">
+              <option value="mix" selected>혼합 (O/X + 4지선다)</option>
+              <option value="ox">O/X만</option>
+              <option value="mc">4지선다만</option>
+            </select>
+          </div>
+          <div class="cfg-row">
+            <span class="cfg-label">주제 범위</span>
+            <select id="cfg-topic">
+              <option value="all" selected>전체</option>
+              <option value="violation">위반사항 확인</option>
+              <option value="reseller">리셀러 판정</option>
+              <option value="platform">플랫폼 신고</option>
+              <option value="seller">셀러 정보 수집</option>
+            </select>
+          </div>
+        </div>
+        <div class="gen-row">
+          <button class="btn btn-green" id="gen-btn" onclick="generateQuiz()">✨ 랜덤 퀴즈 생성</button>
+        </div>
+        <div id="preview-area"></div>
+      </div>
+
+      <!-- 통계 패널 -->
+      <div id="panel-stats" style="display:none">
+        <div class="stats-grid">
+          <div class="stat-box"><div class="stat-num" id="st-total">0</div><div class="stat-lbl">총 풀이</div></div>
+          <div class="stat-box"><div class="stat-num" id="st-avg" style="color:#1d9e75">0%</div><div class="stat-lbl">평균 정답률</div></div>
+          <div class="stat-box"><div class="stat-num" id="st-types">0</div><div class="stat-lbl">참여 유형</div></div>
+        </div>
+        <div id="stats-body"><div class="empty">아직 풀이 데이터가 없습니다.</div></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ── 상수 ── */
+const ADMIN_PW  = 'admin1234';
+const API_URL   = 'https://api.anthropic.com/v1/messages';
+const GUIDE_TXT = `블랙셀러 통합 가이드 핵심:
+
+[정보 입력 프로세스]
+- 작업 할당: 작업일 1일 전부터 조회(월요일은 3일 전), 10건 단위
+- 작업 선택: 당월 전체, 최신순
+- 정보 입력: 위반사항 확인, 리셀러 판정, 셀러 정보 수집, 예외케이스
+
+[신고 프로세스]
+처리 방식 결정표:
+- 필수표기O → 무조건 플랫폼 신고 (상담유형: 상품정보 미표기 및 부정확)
+- 필수표기X + 개인정보O → 플랫폼 신고 (상담유형: 개인정보 침해), 네이버+저작권O는 신고 보류
+- 필수표기X + 개인정보X + 저작권O → 신고 제출만 (네이버는 신고 보류)
+- 필수표기X + 개인정보X + 저작권X → 신고 대상 아님 (리셀러 아님)
+플랫폼별 상담유형:
+- 네이버: 필수표기→상품정보 미표기 및 부정확 / 개인정보→개인정보 침해
+- Gmarket/Auction: 필수표기→표시광고 / 개인정보→게시물 정책 위반
+- 11번가: 필수표기→식품/화장품/의료기기 법위반 / 개인정보→개인정보 도용
+- 롯데ON: 필수표기→상품 정보 오류 / 개인정보→기타
+- 신세계몰: 필수표기→표시 광고 위반 / 개인정보→상품정보 오류
+- 쿠팡: 모두→상품정보 오류
+- 신고하기 창구 없는 플랫폼(GSshop 등): price admin에서 신고 제출만
+
+[위반사항 확인]
+1. 저작권 침해
+- O: 본사 직접 작성 이미지(로고, 상세이미지, 안내문구) 사용
+- X: 실제 제품 구매 후 촬영
+- 애매한 건은 저작권 침해로 판단
+2. 개인정보 침해 (3가지)
+- 위탁배송 명시 누락: 위탁판매자가 배송업체 미명시 (예외: 지마켓/신세계 명시 문구 있으면 X)
+- 판매자 개인정보 처리방침 누락: 수집항목+이용목적+제3자 제공여부 모두 있어야
+- 개인정보 동의여부 누락: "구매시 처리방침에 동의한 것으로 간주" 문구 없으면 침해
+3. 필수표기정보 침해
+- 미기재: 사용기한/소비기한(기타재화 제외), 수입자(수입품만), 제조국, 제조사, 제조연월
+- 허용: YYYY.MM.DD / 제조일로부터 계산 / 보유 기한 범위 / 발송일 기준 기간
+
+[리셀러 판정]
+- 위반사항 1개 이상 → 리셀러 O
+- 위반사항 0개 → 리셀러 X
+- 리셀러 X여도 셀러 정보 수집 진행
+
+[셀러 정보 수집]
+- 대형몰(지마켓, 옥션, 11번가, 쿠팡 등) 또는 제3의몰이면 실제 판매자 찾기
+- 11번가-슈팅배송은 직접 매입이므로 회사가 셀러
+- 쿠팡 판매자면 브랜드샵(본사 직영) 여부 확인
+- 정보 없으면 레이틀리에서 전화번호 매칭, 그래도 안되면 관리자 전달
+
+[예외 케이스 - 입력 보류]
+- 판매 중지 상품, 개인 판매자(구매해야만 정보 확인 가능)
+
+[P&G 신고 상태 업데이트]
+- 매주 금요일, 2주 전 데이터 전수 검사
+- blocked(판매중지) / active(판매중) / reactive(재개)`;
+
+/* ── 상태 ── */
+let apiKey = '';
+let todayQuizzes = [];
+let quizLog = [];
+const wState = {};
+try { quizLog = JSON.parse(localStorage.getItem('bs_quiz_log') || '[]'); } catch(e){}
+
+/* ── 초기화 ── */
+document.getElementById('todayEl').textContent =
+  new Date().toLocaleDateString('ko-KR', {month:'long', day:'numeric', weekday:'short'});
+
+/* ── 탭 ── */
+function gotoTab(t) {
+  ['violation','platform','admin'].forEach(n => {
+    document.getElementById('tab-'+n).classList.toggle('active', n===t);
+    document.getElementById('screen-'+n).classList.toggle('active', n===t);
+  });
+  if (t === 'admin' && document.getElementById('admin-inner').style.display !== 'none') renderStats();
+}
+
+/* ── 잠금 ── */
+function checkPw() {
+  if (document.getElementById('pw-input').value === ADMIN_PW) {
+    document.getElementById('lock-screen').style.display  = 'none';
+    document.getElementById('admin-inner').style.display  = 'block';
+    document.getElementById('tab-admin').textContent = '🛠 관리자';
+    document.getElementById('pw-input').value = '';
+    renderStats();
+  } else {
+    const el = document.getElementById('pw-input');
+    el.classList.add('shake');
+    document.getElementById('pw-err').classList.add('show');
+    setTimeout(() => el.classList.remove('shake'), 400);
+  }
+}
+function clearPwErr() {
+  document.getElementById('pw-input').classList.remove('shake');
+  document.getElementById('pw-err').classList.remove('show');
+}
+function toggleEye(id) {
+  const el = document.getElementById(id);
+  el.type = el.type === 'password' ? 'text' : 'password';
+}
+function lockAdmin() {
+  document.getElementById('admin-inner').style.display = 'none';
+  document.getElementById('lock-screen').style.display = 'flex';
+  document.getElementById('tab-admin').textContent = '🔒 관리자';
+}
+
+/* ── API 키 ── */
+function saveApiKey() {
+  const v = document.getElementById('api-field').value.trim();
+  if (!v.startsWith('sk-')) { alert('올바른 API 키를 입력해 주세요 (sk- 로 시작)'); return; }
+  apiKey = v;
+  document.getElementById('api-input-wrap').style.display  = 'none';
+  document.getElementById('api-saved-wrap').style.display  = 'block';
+  document.getElementById('api-pill').className = 'pill pill-set';
+  document.getElementById('api-pill').textContent = '설정됨';
+  document.getElementById('api-change-btn').style.display  = '';
+  document.getElementById('api-masked-text').textContent   = apiKey.slice(0,12)+'••••••••••••'+apiKey.slice(-4);
+}
+function showApiInput() {
+  document.getElementById('api-input-wrap').style.display = 'block';
+  document.getElementById('api-saved-wrap').style.display = 'none';
+  document.getElementById('api-field').value = apiKey;
+}
+
+/* ── 서브탭 ── */
+function switchSub(t, el) {
+  document.querySelectorAll('.subtab').forEach(s => s.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('panel-generate').style.display = t === 'generate' ? 'block' : 'none';
+  document.getElementById('panel-stats').style.display    = t === 'stats'    ? 'block' : 'none';
+  if (t === 'stats') renderStats();
+}
+
+/* ── 퀴즈 생성 ── */
+async function generateQuiz() {
+  if (!apiKey) { alert('API 키를 먼저 저장해 주세요.'); return; }
+  const count = parseInt(document.getElementById('cfg-count').value);
+  const type  = document.getElementById('cfg-type').value;
+  const topic = document.getElementById('cfg-topic').value;
+
+  const tMap = {all:'전체', violation:'위반사항 확인', reseller:'리셀러 판정', platform:'플랫폼 신고', seller:'셀러 정보 수집'};
+  const yMap = {mix:'O/X와 4지선다 혼합', ox:'O/X만', mc:'4지선다만'};
+
+  document.getElementById('preview-area').innerHTML = '<div class="loading-box"><div class="spinner"></div><br>퀴즈 생성 중…</div>';
+  document.getElementById('gen-btn').disabled = true;
+
+  const prompt = `블랙셀러 가이드 기반 작업자 교육 퀴즈 ${count}개를 만들어주세요.
+
+가이드:
+${GUIDE_TXT}
+
+조건: 주제=${tMap[topic]||'전체'}, 유형=${yMap[type]||'혼합'}, 실무에서 헷갈릴 만한 내용으로.
+
+반드시 아래 JSON만 응답 (다른 텍스트 없이):
+{"quizzes":[{"id":1,"type":"ox","topic":"주제","question":"질문","answer":"O","explanation":"해설"},{"id":2,"type":"mc","topic":"주제","question":"질문","options":["A","B","C","D"],"answer":"A","explanation":"해설"}]}`;
+
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 2000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+    const raw    = data.content[0].text.trim().replace(/```json|```/g,'').trim();
+    const parsed = JSON.parse(raw);
+    todayQuizzes = parsed.quizzes;
+    renderPreview(todayQuizzes);
+    setupWorker('violation');
+    setupWorker('platform');
+  } catch(e) {
+    document.getElementById('preview-area').innerHTML = `<div class="err-box">오류: ${e.message}</div>`;
+  }
+  document.getElementById('gen-btn').disabled = false;
+}
+
+/* ── 미리보기 ── */
+function renderPreview(qs) {
+  let h = '<div class="preview-lbl">미리보기 · 정답 표시됨</div>';
+  qs.forEach((q, i) => {
+    h += `<div class="pcard">
+      <div class="pcard-head">
+        <span class="type-pill ${q.type==='ox'?'pill-ox':'pill-mc'}">${q.type==='ox'?'O/X':'4지선다'}</span>
+        <span class="topic-lbl">${q.topic}</span>
+      </div>
+      <div class="pcard-body">
+        <div class="pq-text">Q${i+1}. ${q.question}</div>`;
+    if (q.type === 'ox') {
+      h += `<div class="poc-row">
+        <div class="poc ${q.answer==='O'?'hit':''}">O</div>
+        <div class="poc ${q.answer==='X'?'hit':''}">X</div>
+      </div>`;
+    } else {
+      h += '<div class="opts-grid">' +
+        q.options.map(o => `<div class="opt-item ${o===q.answer?'hit':''}">${o}</div>`).join('') +
+        '</div>';
+    }
+    h += `<div class="expl-text">💡 ${q.explanation}</div></div></div>`;
+  });
+  document.getElementById('preview-area').innerHTML = h;
+}
+
+/* ── 작업자 퀴즈 설정 ── */
+function setupWorker(mode) {
+  if (!todayQuizzes.length) return;
+  document.getElementById('area-'+mode).innerHTML = `
+    <div class="qcard">
+      <div class="qcard-body start-center">
+        <div style="font-size:24px;margin-bottom:10px">✏️</div>
+        <div style="font-size:14px;font-weight:600;margin-bottom:5px">오늘의 퀴즈</div>
+        <div style="font-size:12px;color:#bbb;margin-bottom:18px">총 ${todayQuizzes.length}문제</div>
+        <button class="btn btn-green" onclick="startWorker('${mode}')">퀴즈 시작하기</button>
+      </div>
+    </div>`;
+}
+
+function startWorker(mode) {
+  wState[mode] = { idx: 0, ans: new Array(todayQuizzes.length).fill(null) };
+  renderQ(mode);
+}
+
+/* ── 퀴즈 렌더 ── */
+function renderQ(mode) {
+  const s    = wState[mode];
+  const q    = todayQuizzes[s.idx];
+  const ans  = s.ans[s.idx];
+  const last = s.idx === todayQuizzes.length - 1;
+
+  /* 선택지 */
+  let optsHtml = '';
+  if (q.type === 'ox') {
+    optsHtml = '<div class="ox-row">' +
+      ['O','X'].map(v => {
+        let c = '';
+        if (ans !== null) {
+          if (v === q.answer)               c = 'rev';
+          if (v === ans && ans !== q.answer) c = 'ng';
+          if (v === ans && ans === q.answer) c = 'ok';
+        }
+        return `<button class="obtn ${c}" ${ans!==null?'disabled':''} onclick="pickAns('${mode}','${v}')">${v}</button>`;
+      }).join('') +
+      '</div>';
+  } else {
+    optsHtml = '<div class="mc-list">' +
+      q.options.map(o => {
+        let c = '';
+        if (ans !== null) {
+          if (o === q.answer)               c = 'rev';
+          if (o === ans && ans !== q.answer) c = 'ng';
+          if (o === ans && ans === q.answer) c = 'ok';
+        }
+        const safe = o.replace(/'/g, "\\'");
+        return `<button class="abtn ${c}" ${ans!==null?'disabled':''} onclick="pickAns('${mode}','${safe}')">${o}</button>`;
+      }).join('') +
+      '</div>';
+  }
+
+  /* 피드백 */
+  let fbHtml = '';
+  if (ans !== null) {
+    const ok = ans === q.answer;
+    fbHtml = `<div class="feedback ${ok?'ok':'ng'}">${ok ? '✓ 정답입니다!' : '✗ 틀렸습니다. 정답: <strong>'+q.answer+'</strong>'}<br>${q.explanation}</div>`;
+  }
+
+  /* 진행 점 */
+  const dots = todayQuizzes.map((_, i) => {
+    let c = '';
+    if (i === s.idx) c = 'cur';
+    else if (s.ans[i] !== null) c = s.ans[i] === todayQuizzes[i].answer ? 'ok' : 'ng';
+    return `<div class="dot ${c}"></div>`;
+  }).join('');
+
+  /* 내비 */
+  const navRight = ans !== null
+    ? (last
+        ? `<button class="btn btn-green btn-sm" onclick="finishWorker('${mode}')">결과 보기</button>`
+        : `<button class="btn btn-green btn-sm" onclick="nextQ('${mode}')">다음</button>`)
+    : '';
+
+  document.getElementById('area-'+mode).innerHTML = `
+    <div class="qcard">
+      <div class="qcard-head">
+        <span class="qcard-topic">${q.topic}</span>
+        <span class="qcard-prog">${s.idx+1} / ${todayQuizzes.length}</span>
+      </div>
+      <div class="qcard-body">
+        <div class="q-text">Q${s.idx+1}. ${q.question}</div>
+        ${optsHtml}
+        ${fbHtml}
+        <div class="nav-row">
+          <div class="dots">${dots}</div>
+          <div style="display:flex;gap:6px">
+            ${s.idx > 0 ? `<button class="btn btn-sm" onclick="prevQ('${mode}')">이전</button>` : ''}
+            ${navRight}
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function pickAns(mode, ans) { wState[mode].ans[wState[mode].idx] = ans; renderQ(mode); }
+function nextQ(mode)  { wState[mode].idx++; renderQ(mode); }
+function prevQ(mode)  { wState[mode].idx--; renderQ(mode); }
+
+/* ── 결과 ── */
+function finishWorker(mode) {
+  const s       = wState[mode];
+  const correct = s.ans.filter((a, i) => a === todayQuizzes[i].answer).length;
+  const total   = todayQuizzes.length;
+  const pct     = Math.round(correct / total * 100);
+
+  quizLog.push({
+    date: new Date().toLocaleDateString('ko-KR'),
+    mode: mode === 'violation' ? '위반사유' : '플랫폼 신고',
+    correct, total, pct
+  });
+  try { localStorage.setItem('bs_quiz_log', JSON.stringify(quizLog)); } catch(e){}
+
+  const emoji = pct >= 80 ? '🎉' : pct >= 60 ? '👍' : '📚';
+  const msg   = pct >= 80 ? '훌륭합니다! 가이드를 잘 숙지하고 있어요.'
+              : pct >= 60 ? '조금 더 복습하면 완벽해질 거예요.'
+              : '가이드를 다시 한 번 읽어보세요.';
+  const color = pct >= 80 ? '#1d9e75' : pct >= 60 ? '#ef9f27' : '#e24b4a';
+
+  const review = todayQuizzes.map((q, i) => {
+    const ok = s.ans[i] === q.answer;
+    const qShort = q.question.length > 52 ? q.question.slice(0,52)+'…' : q.question;
+    return `<div class="ri ${ok?'ok':'ng'}">
+      <div class="ri-q">Q${i+1}. ${qShort}</div>
+      <div class="ri-a">${ok ? '✓ 정답' : '✗ 오답 → 정답: '+q.answer}</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('area-'+mode).innerHTML = `
+    <div class="qcard">
+      <div class="qcard-body result-body">
+        <div style="font-size:28px;margin-bottom:8px">${emoji}</div>
+        <div class="result-score" style="color:${color}">${pct}점</div>
+        <div class="result-sub">${correct} / ${total}문제 정답</div>
+        <div class="result-msg">${msg}</div>
+        <button class="btn btn-green" style="margin-bottom:18px" onclick="setupWorker('${mode}')">다시 풀기</button>
+        <div class="review">${review}</div>
+      </div>
+    </div>`;
+}
+
+/* ── 통계 ── */
+function renderStats() {
+  document.getElementById('st-total').textContent = quizLog.length;
+  if (!quizLog.length) {
+    document.getElementById('stats-body').innerHTML = '<div class="empty">아직 풀이 데이터가 없습니다.</div>';
+    return;
+  }
+  const avg = Math.round(quizLog.reduce((s,l) => s+l.pct, 0) / quizLog.length);
+  document.getElementById('st-avg').textContent  = avg + '%';
+  document.getElementById('st-types').textContent = new Set(quizLog.map(l=>l.mode)).size;
+
+  const rows = quizLog.slice().reverse().map(l => {
+    const fc = l.pct>=80?'#1d9e75':l.pct>=60?'#ef9f27':'#e24b4a';
+    return `<tr>
+      <td>${l.date}</td>
+      <td>${l.mode}</td>
+      <td>${l.correct}/${l.total}</td>
+      <td><div class="rbar"><div class="rfill" style="width:${l.pct}%;background:${fc}"></div></div>${l.pct}%</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('stats-body').innerHTML = `
+    <table>
+      <thead><tr><th>날짜</th><th>유형</th><th>정답</th><th>정답률</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
+
+renderStats();
+</script>
+</body>
+</html>
